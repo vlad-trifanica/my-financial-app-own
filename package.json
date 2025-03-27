@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "homepage": "https://yourgithubusername.github.io/my-financial-app-own/",
+  "homepage": "https://vlad-trifanica.github.io/my-financial-app-own/",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",

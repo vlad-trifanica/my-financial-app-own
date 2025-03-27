@@ -4,7 +4,6 @@ import {
   cn, 
   AVAILABLE_CURRENCIES, 
   Currency, 
-  exchangeRates, 
   convertCurrency,
   fetchExchangeRates
 } from "@/lib/utils"

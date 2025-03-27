@@ -5,8 +5,6 @@ import { useCurrency } from '@/components/ui/currency-selector';
 import { assetService } from '@/lib/services/assetService';
 import { debtService } from '@/lib/services/debtService';
 import { useAuth } from '@/contexts/AuthContext';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Asset, Debt } from '@/types/financial';
 
 // Define some nice colors for our chart segments
 const COLORS = [
@@ -15,8 +13,8 @@ const COLORS = [
 ];
 
 const Dashboard: React.FC = () => {
-  const [assets, setAssets] = useState<Asset[]>([]);
-  const [debts, setDebts] = useState<Debt[]>([]);
+  const [assets, setAssets] = useState<any[]>([]);
+  const [debts, setDebts] = useState<any[]>([]);
   const [totalAssets, setTotalAssets] = useState<number>(0);
   const [totalDebts, setTotalDebts] = useState<number>(0);
   const [netWorth, setNetWorth] = useState<number>(0);
@@ -27,12 +25,6 @@ const Dashboard: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const { currency, convertAmount, formatAmount } = useCurrency();
   const { user } = useAuth();
-  
-  // State for clicked segment details
-  const [isDetailsOpen, setIsDetailsOpen] = useState<boolean>(false);
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [selectedItems, setSelectedItems] = useState<Array<Asset | Debt>>([]);
-  const [isAssetCategory, setIsAssetCategory] = useState<boolean>(true);
   
   // Fetch real data from Supabase
   useEffect(() => {
@@ -139,16 +131,6 @@ const Dashboard: React.FC = () => {
       .join(' ');
   };
 
-  // Format date for display
-  const formatDate = (dateString: string | Date): string => {
-    const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
-    return new Intl.DateTimeFormat('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    }).format(date);
-  };
-
   // Custom tooltip for pie charts
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
@@ -159,39 +141,10 @@ const Dashboard: React.FC = () => {
           <p className="text-xs text-muted-foreground">
             {((payload[0].value / (payload[0].payload.isAsset ? totalAssets : totalDebts)) * 100).toFixed(1)}%
           </p>
-          <p className="text-xs text-primary mt-1">Click for details</p>
         </div>
       );
     }
     return null;
-  };
-
-  // Handle pie chart segment click
-  const handlePieClick = (data: any, index: number, isAsset: boolean) => {
-    try {
-      // Get the raw category name from the data
-      const categoryName = Object.keys(isAsset ? assetAllocation : debtAllocation)
-        .find(key => formatCategoryName(key) === data.name);
-      
-      if (!categoryName) return;
-      
-      // Filter items by the selected category
-      const filteredItems = isAsset 
-        ? assets.filter(asset => asset.category === categoryName)
-        : debts.filter(debt => debt.category === categoryName);
-      
-      // Sort by value (highest first)
-      const sortedItems = [...filteredItems].sort((a, b) => 
-        convertAmount(b.value, b.currency) - convertAmount(a.value, a.currency)
-      );
-      
-      setSelectedCategory(categoryName);
-      setSelectedItems(sortedItems);
-      setIsAssetCategory(isAsset);
-      setIsDetailsOpen(true);
-    } catch (error) {
-      console.error("Error handling pie click:", error);
-    }
   };
 
   return (
@@ -199,13 +152,13 @@ const Dashboard: React.FC = () => {
       <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
       
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
         <Card>
-          <CardHeader className="pb-2">
+          <CardHeader>
             <CardTitle>Total Assets</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl sm:text-3xl font-bold text-green-600 dark:text-green-400">
+            <p className="text-3xl font-bold text-green-600 dark:text-green-400">
               {formatAmount(totalAssets, currency.code)}
             </p>
             <p className="text-sm text-muted-foreground mt-2">{assets.length} assets tracked</p>
@@ -213,23 +166,23 @@ const Dashboard: React.FC = () => {
         </Card>
         
         <Card>
-          <CardHeader className="pb-2">
+          <CardHeader>
             <CardTitle>Total Debts</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl sm:text-3xl font-bold text-red-600 dark:text-red-400">
+            <p className="text-3xl font-bold text-red-600 dark:text-red-400">
               {formatAmount(totalDebts, currency.code)}
             </p>
             <p className="text-sm text-muted-foreground mt-2">{debts.length} debts tracked</p>
           </CardContent>
         </Card>
         
-        <Card className="sm:col-span-2 lg:col-span-1">
-          <CardHeader className="pb-2">
+        <Card>
+          <CardHeader>
             <CardTitle>Net Worth</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className={`text-2xl sm:text-3xl font-bold ${netWorth > 0 ? "text-blue-600 dark:text-blue-400" : "text-red-600 dark:text-red-400"}`}>
+            <p className={`text-3xl font-bold ${netWorth > 0 ? "text-blue-600 dark:text-blue-400" : "text-red-600 dark:text-red-400"}`}>
               {formatAmount(netWorth, currency.code)}
             </p>
             <p className="text-sm text-muted-foreground mt-2">
@@ -240,7 +193,7 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Asset and Debt Allocation with Pie Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="h-full">
           <CardHeader>
             <CardTitle>Asset Allocation</CardTitle>
@@ -248,9 +201,9 @@ const Dashboard: React.FC = () => {
           <CardContent>
             <div className="flex flex-col h-full">
               {/* Top section: Pie Chart and Legend */}
-              <div className="flex flex-col sm:flex-row items-center justify-between mb-6">
+              <div className="flex flex-col md:flex-row items-center justify-between mb-6">
                 {/* Pie Chart for Assets */}
-                <div className="w-full sm:w-1/2 h-52 flex items-center justify-center mb-4 sm:mb-0">
+                <div className="w-full md:w-1/2 h-52 flex items-center justify-center mb-4 md:mb-0">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
@@ -261,8 +214,6 @@ const Dashboard: React.FC = () => {
                         outerRadius={80}
                         fill="#8884d8"
                         dataKey="value"
-                        onClick={(data, index) => handlePieClick(data, index, true)}
-                        className="cursor-pointer"
                       >
                         {assetChartData.map((_, index) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -274,22 +225,11 @@ const Dashboard: React.FC = () => {
                 </div>
 
                 {/* Compact Legend */}
-                <div className="w-full sm:w-1/2 flex flex-col gap-y-3 sm:pl-6 sm:max-w-[45%]">
+                <div className="w-full md:w-1/2 flex flex-col gap-y-3 md:pl-6 md:max-w-[45%]">
                   {Object.entries(assetAllocation)
                     .sort(([, a], [, b]) => b - a)
-                    .slice(0, 5) // Limit to top 5 categories
                     .map(([category, value], index) => (
-                    <div 
-                      key={category} 
-                      className="flex justify-between items-center w-full cursor-pointer hover:bg-muted/50 p-1 rounded"
-                      onClick={() => {
-                        const filteredItems = assets.filter(asset => asset.category === category);
-                        setSelectedCategory(category);
-                        setSelectedItems(filteredItems);
-                        setIsAssetCategory(true);
-                        setIsDetailsOpen(true);
-                      }}
-                    >
+                    <div key={category} className="flex justify-between items-center w-full">
                       <div className="flex items-center min-w-0 max-w-[70%]">
                         <div 
                           className="w-3 h-3 rounded-full mr-2 flex-shrink-0" 
@@ -312,15 +252,15 @@ const Dashboard: React.FC = () => {
                   {assets
                     .sort((a, b) => convertAmount(b.value, b.currency) - convertAmount(a.value, a.currency))
                     .slice(0, 3)
-                    .map((asset, index) => (
+                    .map((asset) => (
                       <div key={asset.id} className="flex flex-col p-3 bg-muted/50 rounded-md">
                         <div className="flex justify-between items-start mb-1">
-                          <span className="font-medium truncate mr-2">{asset.name}</span>
-                          <span className="font-medium whitespace-nowrap">{formatAmount(convertAmount(asset.value, asset.currency), currency.code)}</span>
+                          <span className="font-medium">{asset.name}</span>
+                          <span className="font-medium">{formatAmount(convertAmount(asset.value, asset.currency), currency.code)}</span>
                         </div>
-                        <div className="flex flex-col sm:flex-row sm:justify-between text-xs text-muted-foreground">
+                        <div className="flex justify-between text-xs text-muted-foreground">
                           <span>{formatCategoryName(asset.category)}</span>
-                          <span className="mt-1 sm:mt-0">Last updated: {formatDate(asset.lastUpdated)}</span>
+                          <span>Last updated: {new Date(asset.last_updated).toLocaleDateString()}</span>
                         </div>
                       </div>
                     ))
@@ -338,9 +278,9 @@ const Dashboard: React.FC = () => {
           <CardContent>
             <div className="flex flex-col h-full">
               {/* Top section: Pie Chart and Legend */}
-              <div className="flex flex-col sm:flex-row items-center justify-between mb-6">
+              <div className="flex flex-col md:flex-row items-start mb-6">
                 {/* Pie Chart for Debts */}
-                <div className="w-full sm:w-1/2 h-52 flex items-center justify-center mb-4 sm:mb-0">
+                <div className="w-full md:w-2/3 h-48 flex items-start justify-start mb-4 md:mb-0">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
@@ -348,11 +288,9 @@ const Dashboard: React.FC = () => {
                         cx="50%"
                         cy="50%"
                         labelLine={false}
-                        outerRadius={80}
+                        outerRadius={70}
                         fill="#FF8042"
                         dataKey="value"
-                        onClick={(data, index) => handlePieClick(data, index, false)}
-                        className="cursor-pointer"
                       >
                         {debtChartData.map((_, index) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -364,31 +302,20 @@ const Dashboard: React.FC = () => {
                 </div>
 
                 {/* Compact Legend */}
-                <div className="w-full sm:w-1/2 flex flex-col gap-y-3 sm:pl-6 sm:max-w-[45%]">
+                <div className="w-full md:w-1/3 flex flex-col gap-y-3 md:pl-6">
                   {Object.entries(debtAllocation)
                     .sort(([, a], [, b]) => b - a)
-                    .slice(0, 5) // Limit to top 5 categories
                     .map(([category, value], index) => (
-                    <div 
-                      key={category} 
-                      className="flex justify-between items-center w-full cursor-pointer hover:bg-muted/50 p-1 rounded"
-                      onClick={() => {
-                        const filteredItems = debts.filter(debt => debt.category === category);
-                        setSelectedCategory(category);
-                        setSelectedItems(filteredItems);
-                        setIsAssetCategory(false);
-                        setIsDetailsOpen(true);
-                      }}
-                    >
-                      <div className="flex items-center min-w-0 max-w-[70%]">
+                    <div key={category} className="flex justify-between items-center">
+                      <div className="flex items-center">
                         <div 
                           className="w-3 h-3 rounded-full mr-2 flex-shrink-0" 
                           style={{ backgroundColor: COLORS[index % COLORS.length] }}
                         ></div>
                         <span className="text-sm truncate">{formatCategoryName(category)}</span>
                       </div>
-                      <span className="text-sm font-medium ml-2 text-right whitespace-nowrap">
-                        {totalDebts > 0 ? ((value / totalDebts) * 100).toFixed(1) : '0'}%
+                      <span className="text-sm font-medium whitespace-nowrap">
+                        {((value / totalDebts) * 100).toFixed(1)}%
                       </span>
                     </div>
                   ))}
@@ -399,93 +326,28 @@ const Dashboard: React.FC = () => {
               <div className="mt-2">
                 <h4 className="text-sm font-medium mb-3">Top Debts</h4>
                 <div className="space-y-3">
-                  {debts.length > 0 ? (
-                    debts
-                      .sort((a, b) => convertAmount(b.value, b.currency) - convertAmount(a.value, a.currency))
-                      .slice(0, 3)
-                      .map((debt, index) => (
-                        <div key={debt.id} className="flex flex-col p-3 bg-muted/50 rounded-md">
-                          <div className="flex justify-between items-start mb-1">
-                            <span className="font-medium truncate mr-2">{debt.name}</span>
-                            <span className="font-medium whitespace-nowrap">{formatAmount(convertAmount(debt.value, debt.currency), currency.code)}</span>
-                          </div>
-                          <div className="flex flex-col sm:flex-row sm:justify-between text-xs text-muted-foreground">
-                            <span>{formatCategoryName(debt.category)}</span>
-                            <span className="mt-1 sm:mt-0">Last updated: {formatDate(debt.last_updated)}</span>
-                          </div>
+                  {debts
+                    .sort((a, b) => convertAmount(b.value, b.currency) - convertAmount(a.value, a.currency))
+                    .slice(0, 3)
+                    .map((debt) => (
+                      <div key={debt.id} className="flex flex-col p-3 bg-muted/50 rounded-md">
+                        <div className="flex justify-between items-start mb-1">
+                          <span className="font-medium">{debt.name}</span>
+                          <span className="font-medium">{formatAmount(convertAmount(debt.value, debt.currency), currency.code)}</span>
                         </div>
-                      ))
-                  ) : (
-                    <p className="text-sm text-muted-foreground text-center py-2">No debts tracked yet</p>
-                  )}
+                        <div className="flex justify-between text-xs text-muted-foreground">
+                          <span>{formatCategoryName(debt.category)}</span>
+                          <span>Last updated: {new Date(debt.last_updated).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+                    ))
+                  }
                 </div>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
-
-      {/* Category Details Dialog */}
-      <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>
-              {formatCategoryName(selectedCategory)}
-              <span className="text-muted-foreground ml-2 text-sm font-normal">
-                ({isAssetCategory ? 'Asset' : 'Debt'} Category)
-              </span>
-            </DialogTitle>
-            <DialogDescription>
-              {selectedItems.length} {isAssetCategory ? 'assets' : 'debts'} in this category
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4 mt-4 max-h-[60vh] overflow-y-auto pr-2">
-            {/* Totals Card */}
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex justify-between items-center">
-                  <span className="font-medium">Total</span>
-                  <span className="font-medium">
-                    {formatAmount(
-                      selectedItems.reduce((sum, item) => sum + convertAmount(item.value, item.currency), 0),
-                      currency.code
-                    )}
-                  </span>
-                </div>
-                <div className="text-xs text-muted-foreground mt-1">
-                  {((selectedItems.reduce((sum, item) => sum + convertAmount(item.value, item.currency), 0) / 
-                    (isAssetCategory ? totalAssets : totalDebts)) * 100).toFixed(1)}% of all {isAssetCategory ? 'assets' : 'debts'}
-                </div>
-              </CardContent>
-            </Card>
-            
-            {/* Item List */}
-            {selectedItems.map((item) => (
-              <div key={item.id} className="flex flex-col p-4 bg-muted/40 rounded-lg border">
-                <div className="flex justify-between items-start mb-1">
-                  <span className="font-medium">{item.name}</span>
-                  <span className="font-medium">{formatAmount(convertAmount(item.value, item.currency), currency.code)}</span>
-                </div>
-                <div className="flex justify-between mt-2 text-sm">
-                  <span className="text-muted-foreground">
-                    Original: {item.currency} {item.value.toLocaleString('en-US', {minimumFractionDigits: 2})}
-                  </span>
-                  <span className="text-muted-foreground">
-                    Last updated: {formatDate(item.last_updated)}
-                  </span>
-                </div>
-                {item.comments && (
-                  <div className="mt-2 text-sm text-muted-foreground border-t pt-2">
-                    <span className="block text-xs font-medium mb-1">Notes:</span>
-                    {item.comments}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

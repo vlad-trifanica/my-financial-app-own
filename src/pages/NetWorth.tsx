@@ -3,10 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { assetService } from '@/lib/services/assetService';
 import { debtService } from '@/lib/services/debtService';
 import { netWorthService } from '@/lib/services/netWorthService';
-import { Asset, Debt, NetWorthRecord } from '@/types/financial';
+import { Asset, Debt } from '@/types/financial';
 import { useCurrency } from '@/components/ui/currency-selector';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { useAuth } from '@/contexts/AuthContext';
 
 interface ChartDataPoint {
   month: string;
@@ -23,7 +22,6 @@ const NetWorth: React.FC = () => {
   const [historicalData, setHistoricalData] = useState<ChartDataPoint[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const { formatAmount, convertAmount, currency } = useCurrency();
-  const { user } = useAuth();
 
   // Fetch assets, debts, and historical data from Supabase
   useEffect(() => {
@@ -78,30 +76,8 @@ const NetWorth: React.FC = () => {
     setTotalDebts(debtTotal);
     setNetWorth(assetTotal - debtTotal);
     
-    // Save the net worth record to Supabase if we have data and a user
-    const saveNetWorthRecord = async () => {
-      if (user && assetTotal > 0 && !isLoading) {
-        try {
-          const netWorthRecord: Omit<NetWorthRecord, 'id'> = {
-            user_id: user.id,
-            date: new Date().toISOString(),
-            total_assets: assetTotal,
-            total_debts: debtTotal,
-            net_worth: assetTotal - debtTotal,
-            base_currency: currency.code
-          };
-          
-          await netWorthService.addNetWorthRecord(netWorthRecord);
-        } catch (error) {
-          console.error('Error saving net worth record:', error);
-        }
-      }
-    };
-    
-    // We don't want to save a record on every render, so let's
-    // only do this when explicitly triggered
-    // saveNetWorthRecord();
-  }, [assets, debts, convertAmount, currency, user, isLoading]);
+    // We could save net worth records here if needed in the future
+  }, [assets, debts, convertAmount, currency]);
 
   return (
     <div>
